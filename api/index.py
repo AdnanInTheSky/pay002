@@ -15,8 +15,8 @@ MERCHANT_ID = os.getenv("MERCHANT_ID")
 PASSWORD = os.getenv("PAYSTATION_PASSWORD")
 BASE_URL = os.getenv("BASE_URL")
 
-PAY_URL = "https://api.paystation.com.bd/initiate-payment"
-STATUS_URL = "https://api.paystation.com.bd/transaction-status"
+PAY_URL = "hhttps://sandbox.paystation.com.bd/initiate-payment"
+STATUS_URL = "https://sandbox.paystation.com.bd/transaction-status"
 
 app = Flask(__name__, template_folder="../templates")
 
@@ -24,7 +24,7 @@ app = Flask(__name__, template_folder="../templates")
 # DB
 # =========================
 client = MongoClient(MONGO_URI)
-db = client.get_default_database()
+db = client["paystation_demo"]
 orders = db["orders"]
 
 # =========================
