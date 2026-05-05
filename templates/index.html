@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Secure Shop</title>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -13,23 +12,23 @@
 <!-- HEADER -->
 <header class="bg-white shadow">
   <div class="max-w-6xl mx-auto p-4 flex justify-between items-center">
-    <h1 class="text-xl font-bold">Secure Shop</h1>
-
+    <h1 class="text-xl font-bold">Mini Shop</h1>
     <div class="text-sm bg-gray-100 px-3 py-1 rounded">
       Cart: <span id="cartCount">0</span>
     </div>
   </div>
 </header>
 
-<!-- MAIN -->
+<!-- CONTENT -->
 <main class="max-w-6xl mx-auto p-4 grid md:grid-cols-3 gap-6">
 
   <!-- PRODUCTS -->
   <section class="md:col-span-2">
-    <h2 class="text-lg font-semibold mb-3">Products</h2>
+    <h2 class="text-lg font-semibold mb-4">Products</h2>
 
     <div class="grid gap-4">
 
+      <!-- Product Card -->
       <div class="bg-white p-4 rounded shadow flex justify-between items-center">
         <div>
           <h3 class="font-semibold">Product 1</h3>
@@ -66,17 +65,17 @@
   <!-- CART -->
   <aside class="bg-white p-4 rounded shadow h-fit">
 
-    <h2 class="text-lg font-semibold mb-2">Cart</h2>
+    <h2 class="text-lg font-semibold mb-3">Cart</h2>
 
     <div id="cart" class="space-y-2 text-sm"></div>
 
     <div class="mt-3 font-semibold">
-      Estimated Total: ৳<span id="total">0</span>
+      Total: ৳<span id="total">0</span>
     </div>
 
-    <hr class="my-3"/>
+    <hr class="my-4">
 
-    <!-- USER INFO -->
+    <!-- USER INPUT -->
     <div class="space-y-2">
       <input id="name" class="w-full border p-2 rounded" placeholder="Full Name">
       <input id="phone" class="w-full border p-2 rounded" placeholder="Phone">
@@ -84,12 +83,12 @@
     </div>
 
     <button onclick="checkout()"
-      class="w-full mt-4 bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
-      Proceed to Payment
+      class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded">
+      Checkout
     </button>
 
     <p class="text-xs text-gray-400 mt-2">
-      * Final price is verified by server
+      Final price is verified by server
     </p>
 
   </aside>
@@ -98,7 +97,7 @@
 
 <script>
 /* =========================
-   FIXED PRODUCTS (DISPLAY ONLY)
+   PRODUCT DATA (DISPLAY ONLY)
 ========================= */
 const PRODUCTS = {
   p1: { name: "Product 1", price: 5 },
@@ -107,30 +106,17 @@ const PRODUCTS = {
 };
 
 /* =========================
-   CART STATE (LOCAL ONLY)
+   SAFE CART INIT (FIXED BUG)
 ========================= */
-let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+let cart = [];
 
-/* =========================
-   ADD ITEM
-========================= */
-function add(id) {
-  const item = cart.find(i => i.id === id);
+try {
+  const saved = localStorage.getItem("cart");
+  const parsed = saved ? JSON.parse(saved) : [];
 
-  if (item) item.qty += 1;
-  else cart.push({ id, qty: 1 });
-
-  save();
-  render();
-}
-
-/* =========================
-   REMOVE ITEM
-========================= */
-function removeItem(id) {
-  cart = cart.filter(i => i.id !== id);
-  save();
-  render();
+  cart = Array.isArray(parsed) ? parsed : [];
+} catch (e) {
+  cart = [];
 }
 
 /* =========================
@@ -141,16 +127,59 @@ function save() {
 }
 
 /* =========================
-   CALCULATE (UI ONLY)
+   ADD ITEM
 ========================= */
-function calc() {
-  let total = 0;
+function add(id) {
+  const item = cart.find(i => i.id === id);
 
-  for (let item of cart) {
-    total += PRODUCTS[item.id].price * item.qty;
+  if (item) {
+    item.qty += 1;
+  } else {
+    cart.push({ id: id, qty: 1 });
   }
 
-  return total;
+  save();
+  render();
+}
+
+/* =========================
+   REMOVE ITEM
+========================= */
+function remove(id) {
+  cart = cart.filter(i => i.id !== id);
+  save();
+  render();
+}
+
+/* =========================
+   DECREASE QTY
+========================= */
+function decrease(id) {
+  const item = cart.find(i => i.id === id);
+
+  if (!item) return;
+
+  item.qty -= 1;
+
+  if (item.qty <= 0) {
+    cart = cart.filter(i => i.id !== id);
+  }
+
+  save();
+  render();
+}
+
+/* =========================
+   CALCULATE TOTAL (UI ONLY)
+========================= */
+function total() {
+  let sum = 0;
+
+  for (let item of cart) {
+    sum += PRODUCTS[item.id].price * item.qty;
+  }
+
+  return sum;
 }
 
 /* =========================
@@ -167,26 +196,31 @@ function render() {
     count += item.qty;
 
     box.innerHTML += `
-      <div class="flex justify-between border-b pb-1">
-        <span>${p.name} × ${item.qty}</span>
-        <button onclick="removeItem('${item.id}')" class="text-red-500 text-xs">
-          remove
-        </button>
+      <div class="border-b pb-2">
+        <div class="flex justify-between items-center">
+          <span>${p.name}</span>
+          <span>× ${item.qty}</span>
+        </div>
+
+        <div class="flex gap-2 mt-1">
+          <button onclick="add('${item.id}')" class="text-green-600 text-xs">+</button>
+          <button onclick="decrease('${item.id}')" class="text-yellow-600 text-xs">-</button>
+          <button onclick="remove('${item.id}')" class="text-red-600 text-xs">remove</button>
+        </div>
       </div>
     `;
   }
 
   document.getElementById("cartCount").innerText = count;
-  document.getElementById("total").innerText = calc();
+  document.getElementById("total").innerText = total();
 }
 
 /* =========================
-   CHECKOUT (SECURE FLOW)
+   CHECKOUT
 ========================= */
 async function checkout() {
-
   if (cart.length === 0) {
-    alert("Cart is empty");
+    alert("Cart empty");
     return;
   }
 
@@ -199,32 +233,25 @@ async function checkout() {
     return;
   }
 
-  const payload = {
-    items: cart,
-    name,
-    phone,
-    email
-  };
+  const res = await fetch("/api/create-order", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      items: cart,
+      name,
+      phone,
+      email
+    })
+  });
 
-  try {
-    const res = await fetch("/api/create-order", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(payload)
-    });
+  const data = await res.json();
 
-    const data = await res.json();
-
-    if (data.payment_url) {
-      localStorage.removeItem("cart");
-      window.location.href = data.payment_url;
-    } else {
-      alert("Payment initiation failed");
-      console.log(data);
-    }
-
-  } catch (err) {
-    alert("Network error");
+  if (data.payment_url) {
+    localStorage.removeItem("cart");
+    window.location.href = data.payment_url;
+  } else {
+    alert("Payment failed");
+    console.log(data);
   }
 }
 
