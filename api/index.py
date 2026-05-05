@@ -1,52 +1,73 @@
 import os
 import uuid
 import requests
-from flask import Flask, request, jsonify, render_template
-from pymongo import MongoClient, ASCENDING
+from flask import Flask, request, jsonify
+from pymongo import MongoClient
 from datetime import datetime
 
-app = Flask(__name__, template_folder="../templates")
+app = Flask(__name__)
 
 # =====================
-# CONFIG
+# CONFIG (SAFE LOAD)
 # =====================
-MONGO_URI = os.getenv("MONGO_URI")
-MERCHANT_ID = os.getenv("MERCHANT_ID")
-PASSWORD = os.getenv("PAYSTATION_PASSWORD")
-BASE_URL = os.getenv("BASE_URL")
+MONGO_URI = os.environ.get("MONGO_URI")
+MERCHANT_ID = os.environ.get("MERCHANT_ID")
+PASSWORD = os.environ.get("PAYSTATION_PASSWORD")
+BASE_URL = os.environ.get("BASE_URL")
 
 PAY_URL = "https://sandbox.paystation.com.bd/initiate-payment"
 STATUS_URL = "https://sandbox.paystation.com.bd/transaction-status"
 
 # =====================
-# DB
+# DB (LAZY INIT FIX)
 # =====================
-client = MongoClient(MONGO_URI)
-db = client["paystation_demo"]
+client = None
+db = None
+orders = None
+logs = None
 
-orders = db["orders"]
-logs = db["payment_logs"]
 
-# Unique constraint (important)
-orders.create_index("invoice", unique=True)
+def init_db():
+    global client, db, orders, logs
+
+    if client is None:
+        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+        db = client["paystation_demo"]
+        orders = db["orders"]
+        logs = db["payment_logs"]
+
+        # SAFE: only ensure index once per cold start
+        try:
+            orders.create_index("invoice", unique=True)
+        except:
+            pass
+
 
 # =====================
-# PRODUCTS (TRUTH SOURCE)
+# PRODUCTS (LOCKED PRICES)
 # =====================
-PRODUCTS = {"p1": 5, "p2": 7, "p3": 10}
+PRODUCTS = {
+    "p1": 5,
+    "p2": 7,
+    "p3": 10
+}
 
 
 # =====================
-# PRICE ENGINE
+# PRICE ENGINE (ANTI MANIPULATION)
 # =====================
 def calc(items):
     total = 0
+
     for i in items:
-        pid = i["id"]
-        qty = int(i["qty"])
+        pid = i.get("id")
+        qty = int(i.get("qty", 0))
 
         if pid not in PRODUCTS:
-            raise Exception("invalid product")
+            raise Exception("Invalid product")
+
+        if qty <= 0 or qty > 100:
+            raise Exception("Invalid quantity")
 
         total += PRODUCTS[pid] * qty
 
@@ -54,9 +75,10 @@ def calc(items):
 
 
 # =====================
-# LOG FUNCTION (AUDIT)
+# LOGGING
 # =====================
 def log(invoice, event, data=None):
+    init_db()
     logs.insert_one({
         "invoice": invoice,
         "event": event,
@@ -66,72 +88,64 @@ def log(invoice, event, data=None):
 
 
 # =====================
-# HOME
-# =====================
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-
-# =====================
-# CREATE ORDER (LOCKED INITIATION)
+# CREATE ORDER
 # =====================
 @app.route("/api/create-order", methods=["POST"])
 def create_order():
-    try:
-        data = request.get_json(force=True)
+    init_db()
 
-        items = data.get("items", [])
-        amount = calc(items)
+    data = request.get_json(force=True)
 
-        invoice = str(uuid.uuid4())
+    items = data.get("items", [])
+    amount = calc(items)
 
-        order = {
-            "invoice": invoice,
-            "items": items,
-            "amount": amount,
-            "status": "INITIATED",
-            "verified": False,
-            "locked": True,
-            "customer": {
-                "name": data.get("name"),
-                "email": data.get("email"),
-                "phone": data.get("phone"),
-                "address": data.get("address")
-            }
+    invoice = str(uuid.uuid4())
+
+    order = {
+        "invoice": invoice,
+        "items": items,
+        "amount": amount,
+        "status": "INITIATED",
+        "verified": False,
+        "created_at": datetime.utcnow(),
+        "customer": {
+            "name": data.get("name"),
+            "email": data.get("email"),
+            "phone": data.get("phone"),
+            "address": data.get("address")
         }
+    }
 
-        orders.insert_one(order)
-        log(invoice, "ORDER_CREATED", order)
+    orders.insert_one(order)
+    log(invoice, "ORDER_CREATED", order)
 
-        payload = {
-            "merchantId": MERCHANT_ID,
-            "password": PASSWORD,
-            "invoice_number": invoice,
-            "currency": "BDT",
-            "payment_amount": amount,
-            "cust_name": data.get("name"),
-            "cust_phone": data.get("phone"),
-            "cust_email": data.get("email"),
-            "cust_address": data.get("address"),
-            "callback_url": f"{BASE_URL}/api/callback"
-        }
+    payload = {
+        "merchantId": MERCHANT_ID,
+        "password": PASSWORD,
+        "invoice_number": invoice,
+        "currency": "BDT",
+        "payment_amount": amount,
+        "cust_name": data.get("name"),
+        "cust_phone": data.get("phone"),
+        "cust_email": data.get("email"),
+        "cust_address": data.get("address"),
+        "callback_url": f"{BASE_URL}/api/callback"
+    }
 
-        r = requests.post(PAY_URL, data=payload, timeout=10).json()
+    r = requests.post(PAY_URL, data=payload, timeout=10).json()
 
-        log(invoice, "PAYMENT_INITIATED", r)
+    log(invoice, "PAYMENT_INIT", r)
 
-        return jsonify(r)
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return jsonify(r)
 
 
 # =====================
-# CALLBACK (NEVER TRUSTED)
+# CALLBACK (UNTRUSTED)
 # =====================
 @app.route("/api/callback")
 def callback():
+    init_db()
+
     invoice = request.args.get("invoice_number")
 
     if not invoice:
@@ -142,17 +156,19 @@ def callback():
         {"$set": {"status": "PROCESSING"}}
     )
 
-    log(invoice, "CALLBACK_RECEIVED", dict(request.args))
+    log(invoice, "CALLBACK", dict(request.args))
 
-    verify_payment(invoice)
+    verify(invoice)
 
     return "OK"
 
 
 # =====================
-# PAYMENT VERIFICATION (SOURCE OF TRUTH)
+# VERIFY PAYMENT
 # =====================
-def verify_payment(invoice):
+def verify(invoice):
+    init_db()
+
     try:
         res = requests.post(
             STATUS_URL,
@@ -163,40 +179,39 @@ def verify_payment(invoice):
             timeout=10
         ).json()
 
-        data = res.get("data", {})
-        status = data.get("trx_status")
+        status = res.get("data", {}).get("trx_status")
+
+        final = "PENDING"
 
         if status == "success":
-            final_status = "SUCCESS"
+            final = "SUCCESS"
         elif status == "failed":
-            final_status = "FAILED"
-        else:
-            final_status = "PROCESSING"
+            final = "FAILED"
 
         orders.update_one(
             {"invoice": invoice},
             {"$set": {
-                "status": final_status,
-                "verified": True,
-                "locked": True
+                "status": final,
+                "verified": True
             }}
         )
 
-        log(invoice, "VERIFIED", data)
+        log(invoice, "VERIFIED", res)
 
     except Exception as e:
         log(invoice, "VERIFY_ERROR", str(e))
 
 
 # =====================
-# ORDER STATUS API (FOR FRONTEND POLLING)
+# GET ORDER
 # =====================
 @app.route("/api/order/<invoice>")
 def get_order(invoice):
+    init_db()
+
     order = orders.find_one({"invoice": invoice}, {"_id": 0})
+
     if not order:
         return jsonify({"error": "not found"}), 404
+
     return jsonify(order)
-
-
- 
