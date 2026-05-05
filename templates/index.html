@@ -1,79 +1,238 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Shop</title>
-</head>
-<body>
-  <h2>Products</h2>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Secure Shop</title>
 
-  <div id="products"></div>
-  <h3>Total: ৳<span id="total">0</span></h3>
-  <button onclick="checkout()">Checkout</button>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 text-gray-900">
+
+<!-- HEADER -->
+<header class="bg-white shadow">
+  <div class="max-w-6xl mx-auto p-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold">Secure Shop</h1>
+
+    <div class="text-sm bg-gray-100 px-3 py-1 rounded">
+      Cart: <span id="cartCount">0</span>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="max-w-6xl mx-auto p-4 grid md:grid-cols-3 gap-6">
+
+  <!-- PRODUCTS -->
+  <section class="md:col-span-2">
+    <h2 class="text-lg font-semibold mb-3">Products</h2>
+
+    <div class="grid gap-4">
+
+      <div class="bg-white p-4 rounded shadow flex justify-between items-center">
+        <div>
+          <h3 class="font-semibold">Product 1</h3>
+          <p class="text-sm text-gray-500">৳5</p>
+        </div>
+        <button onclick="add('p1')" class="bg-green-600 text-white px-3 py-1 rounded">
+          Add
+        </button>
+      </div>
+
+      <div class="bg-white p-4 rounded shadow flex justify-between items-center">
+        <div>
+          <h3 class="font-semibold">Product 2</h3>
+          <p class="text-sm text-gray-500">৳7</p>
+        </div>
+        <button onclick="add('p2')" class="bg-green-600 text-white px-3 py-1 rounded">
+          Add
+        </button>
+      </div>
+
+      <div class="bg-white p-4 rounded shadow flex justify-between items-center">
+        <div>
+          <h3 class="font-semibold">Product 3</h3>
+          <p class="text-sm text-gray-500">৳10</p>
+        </div>
+        <button onclick="add('p3')" class="bg-green-600 text-white px-3 py-1 rounded">
+          Add
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CART -->
+  <aside class="bg-white p-4 rounded shadow h-fit">
+
+    <h2 class="text-lg font-semibold mb-2">Cart</h2>
+
+    <div id="cart" class="space-y-2 text-sm"></div>
+
+    <div class="mt-3 font-semibold">
+      Estimated Total: ৳<span id="total">0</span>
+    </div>
+
+    <hr class="my-3"/>
+
+    <!-- USER INFO -->
+    <div class="space-y-2">
+      <input id="name" class="w-full border p-2 rounded" placeholder="Full Name">
+      <input id="phone" class="w-full border p-2 rounded" placeholder="Phone">
+      <input id="email" class="w-full border p-2 rounded" placeholder="Email">
+    </div>
+
+    <button onclick="checkout()"
+      class="w-full mt-4 bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+      Proceed to Payment
+    </button>
+
+    <p class="text-xs text-gray-400 mt-2">
+      * Final price is verified by server
+    </p>
+
+  </aside>
+
+</main>
 
 <script>
+/* =========================
+   FIXED PRODUCTS (DISPLAY ONLY)
+========================= */
 const PRODUCTS = {
-  p1: {name: "Product 1", price: 500},
-  p2: {name: "Product 2", price: 800},
-  p3: {name: "Product 3", price: 1200},
+  p1: { name: "Product 1", price: 5 },
+  p2: { name: "Product 2", price: 7 },
+  p3: { name: "Product 3", price: 10 }
 };
 
-let cart = {};
+/* =========================
+   CART STATE (LOCAL ONLY)
+========================= */
+let cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
-function render(){
-  let html = "";
-  for (let id in PRODUCTS){
-    html += `
-      <div>
-        <b>${PRODUCTS[id].name}</b> - ৳${PRODUCTS[id].price}
-        <button onclick="add('${id}')">Add</button>
+/* =========================
+   ADD ITEM
+========================= */
+function add(id) {
+  const item = cart.find(i => i.id === id);
+
+  if (item) item.qty += 1;
+  else cart.push({ id, qty: 1 });
+
+  save();
+  render();
+}
+
+/* =========================
+   REMOVE ITEM
+========================= */
+function removeItem(id) {
+  cart = cart.filter(i => i.id !== id);
+  save();
+  render();
+}
+
+/* =========================
+   SAVE CART
+========================= */
+function save() {
+  localStorage.setItem("cart", JSON.stringify(cart));
+}
+
+/* =========================
+   CALCULATE (UI ONLY)
+========================= */
+function calc() {
+  let total = 0;
+
+  for (let item of cart) {
+    total += PRODUCTS[item.id].price * item.qty;
+  }
+
+  return total;
+}
+
+/* =========================
+   RENDER CART
+========================= */
+function render() {
+  const box = document.getElementById("cart");
+  box.innerHTML = "";
+
+  let count = 0;
+
+  for (let item of cart) {
+    const p = PRODUCTS[item.id];
+    count += item.qty;
+
+    box.innerHTML += `
+      <div class="flex justify-between border-b pb-1">
+        <span>${p.name} × ${item.qty}</span>
+        <button onclick="removeItem('${item.id}')" class="text-red-500 text-xs">
+          remove
+        </button>
       </div>
     `;
   }
-  document.getElementById("products").innerHTML = html;
+
+  document.getElementById("cartCount").innerText = count;
+  document.getElementById("total").innerText = calc();
 }
 
-function add(id){
-  if(!cart[id]) cart[id] = {id:id, qty:0, price: PRODUCTS[id].price};
-  cart[id].qty++;
-  calc();
-}
+/* =========================
+   CHECKOUT (SECURE FLOW)
+========================= */
+async function checkout() {
 
-function calc(){
-  let total = 0;
-  for(let id in cart){
-    total += cart[id].price * cart[id].qty;
-  }
-  document.getElementById("total").innerText = total;
-}
-
-async function checkout(){
-  let items = [];
-  let total = 0;
-
-  for(let id in cart){
-    items.push({id:id, qty:cart[id].qty});
-    total += cart[id].price * cart[id].qty;
+  if (cart.length === 0) {
+    alert("Cart is empty");
+    return;
   }
 
-  const name = prompt("Name:");
-  const phone = prompt("Phone:");
-  const email = prompt("Email:");
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const email = document.getElementById("email").value.trim();
 
-  const res = await fetch("/api/create-order", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      items: items,
-      frontend_total: total,
-      name, phone, email
-    })
-  });
+  if (!name || !phone || !email) {
+    alert("Fill all fields");
+    return;
+  }
 
-  const data = await res.json();
-  window.location.href = data.payment_url;
+  const payload = {
+    items: cart,
+    name,
+    phone,
+    email
+  };
+
+  try {
+    const res = await fetch("/api/create-order", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (data.payment_url) {
+      localStorage.removeItem("cart");
+      window.location.href = data.payment_url;
+    } else {
+      alert("Payment initiation failed");
+      console.log(data);
+    }
+
+  } catch (err) {
+    alert("Network error");
+  }
 }
 
+/* =========================
+   INIT
+========================= */
 render();
 </script>
+
 </body>
 </html>
