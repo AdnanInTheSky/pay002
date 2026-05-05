@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Store</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .card { border: 1px solid #ccc; padding: 15px; }
+    button { padding: 8px 12px; cursor: pointer; }
+    #cart { margin-top: 30px; }
+  </style>
+</head>
+<body>
+
+<h1>Store</h1>
+
+<div class="grid" id="products"></div>
+
+<div id="cart">
+  <h2>Cart</h2>
+  <ul id="cartItems"></ul>
+  <h3 id="total">Total: 0 BDT</h3>
+  <button onclick="checkout()">Checkout & Pay</button>
+</div>
+
+<script>
+const PRODUCTS = [
+  { id: "p1", name: "Product One", price: 1200 },
+  { id: "p2", name: "Product Two", price: 2200 },
+  { id: "p3", name: "Product Three", price: 3200 }
+];
+
+let cart = [];
+
+const productsDiv = document.getElementById("products");
+const cartItems = document.getElementById("cartItems");
+const totalEl = document.getElementById("total");
+
+function renderProducts() {
+  for (let i = 0; i < PRODUCTS.length; i++) {
+    const p = PRODUCTS[i];
+
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <h3>${p.name}</h3>
+      <p>Price: ${p.price} BDT</p>
+      <button onclick="addToCart('${p.id}')">Add to Cart</button>
+    `;
+    productsDiv.appendChild(div);
+  }
+}
+
+function addToCart(id) {
+  cart.push(id);
+  renderCart();
+}
+
+function renderCart() {
+  cartItems.innerHTML = "";
+  let total = 0;
+
+  for (let i = 0; i < cart.length; i++) {
+    const id = cart[i];
+
+    for (let j = 0; j < PRODUCTS.length; j++) {
+      if (PRODUCTS[j].id === id) {
+        total += PRODUCTS[j].price;
+
+        const li = document.createElement("li");
+        li.textContent = PRODUCTS[j].name + " - " + PRODUCTS[j].price + " BDT";
+        cartItems.appendChild(li);
+      }
+    }
+  }
+
+  totalEl.textContent = "Total: " + total + " BDT";
+}
+
+async function checkout() {
+  if (cart.length === 0) {
+    alert("Cart is empty");
+    return;
+  }
+
+  let total = 0;
+  for (let i = 0; i < cart.length; i++) {
+    for (let j = 0; j < PRODUCTS.length; j++) {
+      if (PRODUCTS[j].id === cart[i]) {
+        total += PRODUCTS[j].price;
+      }
+    }
+  }
+
+  const res = await fetch("/api/create-order", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cart: cart, total: total })
+  });
+
+  const data = await res.json();
+
+  if (data.payment_url) {
+    window.location.href = data.payment_url;   // mandatory redirect for PayStation
+  } else {
+    alert("Error creating order: " + JSON.stringify(data));
+  }
+}
+
+renderProducts();
+</script>
+
+</body>
+</html>
