@@ -1,112 +1,625 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>PayShop</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayShop — Checkout</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #0f0f0f;
+      --paper: #f5f2ec;
+      --accent: #e8441a;
+      --accent2: #1a3de8;
+      --muted: #8a8578;
+      --card: #ffffff;
+      --border: #e2ded6;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    h1, h2, h3, .syne { font-family: 'Syne', sans-serif; }
+
+    /* HEADER */
+    header {
+      background: var(--ink);
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: -0.03em;
+    }
+
+    .logo span { color: var(--accent); }
+
+    .cart-badge {
+      background: var(--accent);
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 0.3rem 0.9rem;
+      border-radius: 2rem;
+      cursor: pointer;
+      transition: transform 0.15s;
+      user-select: none;
+    }
+
+    .cart-badge:hover { transform: scale(1.05); }
+    .cart-badge.pop { animation: pop 0.2s ease; }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.25); }
+      100% { transform: scale(1); }
+    }
+
+    /* LAYOUT */
+    .main { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    /* PRODUCT GRID */
+    .products { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+
+    .product-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .product-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 60%, rgba(232,68,26,0.04));
+      pointer-events: none;
+    }
+
+    .product-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 24px rgba(232,68,26,0.12);
+      transform: translateY(-2px);
+    }
+
+    .product-emoji { font-size: 2.4rem; }
+    .product-name { font-weight: 500; font-size: 0.88rem; text-align: center; }
+    .product-price {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--accent2);
+    }
+
+    .add-btn {
+      margin-top: 0.4rem;
+      background: var(--ink);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.45rem 1.2rem;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: 0.02em;
+      width: 100%;
+    }
+
+    .add-btn:hover { background: var(--accent); }
+    .add-btn:active { transform: scale(0.96); }
+
+    /* CART DRAWER */
+    #cart-panel {
+      position: fixed;
+      top: 0; right: 0;
+      height: 100%;
+      width: 380px;
+      max-width: 95vw;
+      background: var(--card);
+      box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(110%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #cart-panel.open { transform: translateX(0); }
+
+    .cart-header {
+      background: var(--ink);
+      color: white;
+      padding: 1.2rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cart-header h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+      opacity: 0.7;
+      transition: opacity 0.15s;
+    }
+    .close-btn:hover { opacity: 1; }
+
+    .cart-items { flex: 1; overflow-y: auto; padding: 1rem 1.5rem; }
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cart-item-emoji { font-size: 1.6rem; min-width: 2rem; text-align: center; }
+    .cart-item-info { flex: 1; }
+    .cart-item-name { font-size: 0.85rem; font-weight: 500; }
+    .cart-item-price { font-size: 0.8rem; color: var(--muted); }
+
+    .qty-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .qty-btn {
+      width: 26px; height: 26px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      background: none;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .qty-btn:hover { border-color: var(--accent); background: #fff5f3; }
+
+    .qty-val { font-family: 'Syne', sans-serif; font-weight: 700; min-width: 1.5rem; text-align: center; }
+
+    .cart-footer { padding: 1.2rem 1.5rem; border-top: 2px solid var(--border); }
+
+    .cart-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .cart-total span { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; }
+
+    /* CHECKOUT FORM */
+    #checkout-form { margin-top: 0.5rem; }
+
+    .form-row { margin-bottom: 0.7rem; }
+
+    .form-input {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.9rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      outline: none;
+      background: var(--paper);
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus { border-color: var(--accent2); background: white; }
+    .form-input::placeholder { color: #bbb; }
+
+    .pay-btn {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0.85rem;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: 0.02em;
+      margin-top: 0.5rem;
+    }
+
+    .pay-btn:hover:not(:disabled) { background: #c73a15; }
+    .pay-btn:active:not(:disabled) { transform: scale(0.98); }
+    .pay-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* EMPTY CART */
+    .empty-cart {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+    }
+    .empty-cart .emoji { font-size: 3rem; }
+
+    /* OVERLAY */
+    #overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 99;
+      display: none;
+      backdrop-filter: blur(2px);
+    }
+    #overlay.show { display: block; }
+
+    /* ERROR TOAST */
+    #toast {
+      position: fixed;
+      bottom: 2rem; left: 50%;
+      transform: translateX(-50%) translateY(4rem);
+      background: #1a1a1a;
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border-radius: 2rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      z-index: 200;
+      transition: transform 0.3s ease;
+      pointer-events: none;
+      max-width: 90vw;
+      text-align: center;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.error { background: var(--accent); }
+
+    /* HERO */
+    .hero {
+      background: var(--ink);
+      color: white;
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 220px; height: 220px;
+      background: radial-gradient(circle, rgba(232,68,26,0.3), transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -60px; left: 30%;
+      width: 160px; height: 160px;
+      background: radial-gradient(circle, rgba(26,61,232,0.25), transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero p {
+      color: rgba(255,255,255,0.55);
+      margin-top: 0.7rem;
+      font-size: 0.95rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .secure-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.7);
+      font-size: 0.78rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: 2rem;
+      margin-top: 1.2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 480px) {
+      .hero { padding: 2rem 1.2rem; }
+      .products { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
 </head>
+<body>
 
-<body class="bg-gray-100">
-
-<div class="max-w-5xl mx-auto p-6">
-
-  <h1 class="text-2xl font-bold mb-4">Checkout Store</h1>
-
-  <!-- PRODUCTS -->
-  <div class="grid gap-3 mb-6">
-
-    <div class="bg-white p-3 rounded shadow flex justify-between">
-      <span>Product 1 (৳5)</span>
-      <button onclick="add('p1')" class="bg-green-600 text-white px-2">Add</button>
-    </div>
-
-    <div class="bg-white p-3 rounded shadow flex justify-between">
-      <span>Product 2 (৳7)</span>
-      <button onclick="add('p2')" class="bg-green-600 text-white px-2">Add</button>
-    </div>
-
-    <div class="bg-white p-3 rounded shadow flex justify-between">
-      <span>Product 3 (৳10)</span>
-      <button onclick="add('p3')" class="bg-green-600 text-white px-2">Add</button>
-    </div>
-
-  </div>
-
-  <!-- CART -->
-  <div class="bg-white p-4 rounded shadow mb-4">
-    <h2 class="font-semibold">Cart</h2>
-    <div id="cart"></div>
-    <p class="mt-2">Total: ৳<span id="total">0</span></p>
-  </div>
-
-  <!-- CHECKOUT FORM -->
-  <div class="bg-white p-4 rounded shadow space-y-2">
-
-    <input id="name" placeholder="Name" class="border p-2 w-full">
-    <input id="email" placeholder="Email" class="border p-2 w-full">
-    <input id="phone" placeholder="Phone" class="border p-2 w-full">
-    <input id="address" placeholder="Address" class="border p-2 w-full">
-
-    <button onclick="checkout()" class="bg-blue-600 text-white w-full p-2">
-      Pay Now
+  <!-- HEADER -->
+  <header>
+    <div class="logo">Pay<span>Shop</span></div>
+    <button class="cart-badge" id="cart-toggle" onclick="toggleCart()">
+      🛒 Cart <span id="cart-count">0</span>
     </button>
+  </header>
 
+  <!-- OVERLAY -->
+  <div id="overlay" onclick="toggleCart()"></div>
+
+  <!-- CART DRAWER -->
+  <div id="cart-panel">
+    <div class="cart-header">
+      <h2>Your Cart</h2>
+      <button class="close-btn" onclick="toggleCart()">✕</button>
+    </div>
+
+    <div class="cart-items" id="cart-items-list">
+      <div class="empty-cart">
+        <div class="emoji">🛒</div>
+        <p>Your cart is empty</p>
+      </div>
+    </div>
+
+    <div class="cart-footer" id="cart-footer" style="display:none">
+      <div class="cart-total">
+        <span style="color:var(--muted);font-weight:500;font-size:0.9rem">Total</span>
+        <span>৳<span id="cart-total-val">0</span></span>
+      </div>
+
+      <div id="checkout-form">
+        <div class="form-row">
+          <input class="form-input" id="f-name" placeholder="Full name" required>
+        </div>
+        <div class="form-row">
+          <input class="form-input" id="f-email" type="email" placeholder="Email address" required>
+        </div>
+        <div class="form-row">
+          <input class="form-input" id="f-phone" placeholder="Phone number (01XXXXXXXXX)" required>
+        </div>
+        <div class="form-row">
+          <input class="form-input" id="f-address" placeholder="Delivery address" required>
+        </div>
+        <button class="pay-btn" id="pay-btn" onclick="checkout()">
+          Pay Now →
+        </button>
+      </div>
+    </div>
   </div>
 
-</div>
+  <!-- MAIN -->
+  <main class="main">
 
-<script>
-const PRODUCTS = {p1:5,p2:7,p3:10};
-let cart = [];
+    <div class="hero">
+      <h1>Shop &amp;<br>Pay Instant</h1>
+      <p>Fast, secure checkout powered by PayStation</p>
+      <div class="secure-badge">🔒 SSL secured · PayStation gateway</div>
+    </div>
 
-function add(id){
-  let item = cart.find(i=>i.id===id);
-  if(item) item.qty++;
-  else cart.push({id,qty:1});
-  render();
-}
+    <div class="section-title">Products</div>
 
-function total(){
-  let t=0;
-  for(let i of cart){
-    t+=PRODUCTS[i.id]*i.qty;
-  }
-  return t;
-}
+    <div class="products">
+      {% for pid, p in products.items() %}
+      <div class="product-card">
+        <div class="product-emoji">{{ p.emoji }}</div>
+        <div class="product-name">{{ p.name }}</div>
+        <div class="product-price">৳{{ p.price }}</div>
+        <button class="add-btn" onclick="add('{{ pid }}', '{{ p.name }}', {{ p.price }}, '{{ p.emoji }}')">
+          + Add to Cart
+        </button>
+      </div>
+      {% endfor %}
+    </div>
 
-function render(){
-  document.getElementById("total").innerText = total();
+  </main>
 
-  let html="";
-  for(let i of cart){
-    html += `<div>${i.id} x ${i.qty}</div>`;
-  }
+  <!-- TOAST -->
+  <div id="toast"></div>
 
-  document.getElementById("cart").innerHTML = html;
-}
+  <script>
+    // ========================
+    // STATE
+    // ========================
+    const PRODUCTS_CLIENT = {
+      {% for pid, p in products.items() %}
+      "{{ pid }}": { name: "{{ p.name }}", price: {{ p.price }}, emoji: "{{ p.emoji }}" },
+      {% endfor %}
+    };
 
-async function checkout(){
+    let cart = {};  // { pid: qty }
+    let cartOpen = false;
 
-  const res = await fetch("/api/create-order",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      items:cart,
-      name:document.getElementById("name").value,
-      email:document.getElementById("email").value,
-      phone:document.getElementById("phone").value,
-      address:document.getElementById("address").value
-    })
-  });
+    // ========================
+    // CART LOGIC
+    // ========================
+    function add(pid, name, price, emoji) {
+      cart[pid] = (cart[pid] || 0) + 1;
+      renderCart();
+      toast(`Added ${emoji} ${name}!`);
+      const badge = document.getElementById('cart-toggle');
+      badge.classList.remove('pop');
+      void badge.offsetWidth;
+      badge.classList.add('pop');
+    }
 
-  const data = await res.json();
+    function setQty(pid, qty) {
+      if (qty <= 0) {
+        delete cart[pid];
+      } else if (qty <= 10) {
+        cart[pid] = qty;
+      }
+      renderCart();
+    }
 
-  if(data.payment_url){
-    window.location.href = data.payment_url;
-  } else {
-    alert("Payment failed");
-  }
-}
-</script>
+    function cartItems() {
+      return Object.entries(cart).map(([id, qty]) => ({ id, qty }));
+    }
 
+    function cartTotal() {
+      return Object.entries(cart).reduce((sum, [pid, qty]) => {
+        return sum + (PRODUCTS_CLIENT[pid]?.price || 0) * qty;
+      }, 0);
+    }
+
+    function cartCount() {
+      return Object.values(cart).reduce((a, b) => a + b, 0);
+    }
+
+    // ========================
+    // RENDER
+    // ========================
+    function renderCart() {
+      const count = cartCount();
+      document.getElementById('cart-count').textContent = count;
+      document.getElementById('cart-total-val').textContent = cartTotal().toLocaleString('en-BD');
+
+      const list = document.getElementById('cart-items-list');
+      const footer = document.getElementById('cart-footer');
+
+      if (count === 0) {
+        list.innerHTML = `<div class="empty-cart"><div class="emoji">🛒</div><p>Your cart is empty</p></div>`;
+        footer.style.display = 'none';
+        return;
+      }
+
+      footer.style.display = 'block';
+      list.innerHTML = Object.entries(cart).map(([pid, qty]) => {
+        const p = PRODUCTS_CLIENT[pid];
+        if (!p) return '';
+        return `
+          <div class="cart-item">
+            <div class="cart-item-emoji">${p.emoji}</div>
+            <div class="cart-item-info">
+              <div class="cart-item-name">${p.name}</div>
+              <div class="cart-item-price">৳${(p.price * qty).toLocaleString('en-BD')}</div>
+            </div>
+            <div class="qty-ctrl">
+              <button class="qty-btn" onclick="setQty('${pid}', ${qty - 1})">−</button>
+              <span class="qty-val">${qty}</span>
+              <button class="qty-btn" onclick="setQty('${pid}', ${qty + 1})">+</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ========================
+    // CART DRAWER
+    // ========================
+    function toggleCart() {
+      cartOpen = !cartOpen;
+      document.getElementById('cart-panel').classList.toggle('open', cartOpen);
+      document.getElementById('overlay').classList.toggle('show', cartOpen);
+    }
+
+    // ========================
+    // CHECKOUT
+    // ========================
+    async function checkout() {
+      const name    = document.getElementById('f-name').value.trim();
+      const email   = document.getElementById('f-email').value.trim();
+      const phone   = document.getElementById('f-phone').value.trim();
+      const address = document.getElementById('f-address').value.trim();
+
+      if (!name || !email || !phone || !address) {
+        toast('Please fill all fields', true); return;
+      }
+
+      if (cartCount() === 0) {
+        toast('Your cart is empty', true); return;
+      }
+
+      const btn = document.getElementById('pay-btn');
+      btn.disabled = true;
+      btn.textContent = 'Processing…';
+
+      try {
+        const res = await fetch('/api/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: cartItems(), name, email, phone, address })
+        });
+
+        const data = await res.json();
+
+        if (data.payment_url) {
+          window.location.href = data.payment_url;
+        } else {
+          toast(data.error || 'Payment initiation failed', true);
+          btn.disabled = false;
+          btn.textContent = 'Pay Now →';
+        }
+      } catch (e) {
+        toast('Network error. Please try again.', true);
+        btn.disabled = false;
+        btn.textContent = 'Pay Now →';
+      }
+    }
+
+    // ========================
+    // TOAST
+    // ========================
+    let toastTimer;
+    function toast(msg, isError = false) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'show' + (isError ? ' error' : '');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+    }
+
+    // Init
+    renderCart();
+  </script>
 </body>
 </html>
