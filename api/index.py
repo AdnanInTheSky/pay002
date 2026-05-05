@@ -15,7 +15,7 @@ MERCHANT_ID = os.getenv("MERCHANT_ID")
 PASSWORD = os.getenv("PAYSTATION_PASSWORD")
 BASE_URL = os.getenv("BASE_URL")
 
-PAY_URL = "hhttps://sandbox.paystation.com.bd/initiate-payment"
+PAY_URL = "https://sandbox.paystation.com.bd/initiate-payment"
 STATUS_URL = "https://sandbox.paystation.com.bd/transaction-status"
 
 app = Flask(__name__, template_folder="../templates")
