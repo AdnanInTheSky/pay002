@@ -2,4 +2,3 @@ flask
 pymongo
 requests
 python-dotenv
-flask-limiter
