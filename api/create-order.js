@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 
   const client = new MongoClient(process.env.MONGO_URI);
   await client.connect();
-  await client.db("paystation").collection("orders").insertOne({
+  await client.db("paystation_demo").collection("orders").insertOne({
     invoice_number: invoice,
     cart,
     amount: verified,
