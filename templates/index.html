@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Shop</title>
+</head>
+<body>
+  <h2>Products</h2>
+
+  <div id="products"></div>
+  <h3>Total: ৳<span id="total">0</span></h3>
+  <button onclick="checkout()">Checkout</button>
+
+<script>
+const PRODUCTS = {
+  p1: {name: "Product 1", price: 500},
+  p2: {name: "Product 2", price: 800},
+  p3: {name: "Product 3", price: 1200},
+};
+
+let cart = {};
+
+function render(){
+  let html = "";
+  for (let id in PRODUCTS){
+    html += `
+      <div>
+        <b>${PRODUCTS[id].name}</b> - ৳${PRODUCTS[id].price}
+        <button onclick="add('${id}')">Add</button>
+      </div>
+    `;
+  }
+  document.getElementById("products").innerHTML = html;
+}
+
+function add(id){
+  if(!cart[id]) cart[id] = {id:id, qty:0, price: PRODUCTS[id].price};
+  cart[id].qty++;
+  calc();
+}
+
+function calc(){
+  let total = 0;
+  for(let id in cart){
+    total += cart[id].price * cart[id].qty;
+  }
+  document.getElementById("total").innerText = total;
+}
+
+async function checkout(){
+  let items = [];
+  let total = 0;
+
+  for(let id in cart){
+    items.push({id:id, qty:cart[id].qty});
+    total += cart[id].price * cart[id].qty;
+  }
+
+  const name = prompt("Name:");
+  const phone = prompt("Phone:");
+  const email = prompt("Email:");
+
+  const res = await fetch("/api/create-order", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      items: items,
+      frontend_total: total,
+      name, phone, email
+    })
+  });
+
+  const data = await res.json();
+  window.location.href = data.payment_url;
+}
+
+render();
+</script>
+</body>
+</html>
