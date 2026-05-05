@@ -1,38 +1,106 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Shop</title>
+  <title>PayShop</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="p-6 bg-gray-100">
+<body class="bg-gray-100">
 
-<h1 class="text-xl font-bold mb-4">Shop</h1>
+<div class="max-w-5xl mx-auto p-6">
 
-<button onclick="buy()" class="bg-blue-600 text-white px-4 py-2 rounded">
-  Buy Sample Cart
-</button>
+  <h1 class="text-2xl font-bold mb-4">Checkout Store</h1>
+
+  <!-- PRODUCTS -->
+  <div class="grid gap-3 mb-6">
+
+    <div class="bg-white p-3 rounded shadow flex justify-between">
+      <span>Product 1 (৳5)</span>
+      <button onclick="add('p1')" class="bg-green-600 text-white px-2">Add</button>
+    </div>
+
+    <div class="bg-white p-3 rounded shadow flex justify-between">
+      <span>Product 2 (৳7)</span>
+      <button onclick="add('p2')" class="bg-green-600 text-white px-2">Add</button>
+    </div>
+
+    <div class="bg-white p-3 rounded shadow flex justify-between">
+      <span>Product 3 (৳10)</span>
+      <button onclick="add('p3')" class="bg-green-600 text-white px-2">Add</button>
+    </div>
+
+  </div>
+
+  <!-- CART -->
+  <div class="bg-white p-4 rounded shadow mb-4">
+    <h2 class="font-semibold">Cart</h2>
+    <div id="cart"></div>
+    <p class="mt-2">Total: ৳<span id="total">0</span></p>
+  </div>
+
+  <!-- CHECKOUT FORM -->
+  <div class="bg-white p-4 rounded shadow space-y-2">
+
+    <input id="name" placeholder="Name" class="border p-2 w-full">
+    <input id="email" placeholder="Email" class="border p-2 w-full">
+    <input id="phone" placeholder="Phone" class="border p-2 w-full">
+    <input id="address" placeholder="Address" class="border p-2 w-full">
+
+    <button onclick="checkout()" class="bg-blue-600 text-white w-full p-2">
+      Pay Now
+    </button>
+
+  </div>
+
+</div>
 
 <script>
-async function buy() {
-  const res = await fetch("/api/create-order", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      items: [
-        {id: "p1", qty: 1},
-        {id: "p3", qty: 2}
-      ],
-      name: "Test User",
-      phone: "01700000000",
-      email: "test@gmail.com"
+const PRODUCTS = {p1:5,p2:7,p3:10};
+let cart = [];
+
+function add(id){
+  let item = cart.find(i=>i.id===id);
+  if(item) item.qty++;
+  else cart.push({id,qty:1});
+  render();
+}
+
+function total(){
+  let t=0;
+  for(let i of cart){
+    t+=PRODUCTS[i.id]*i.qty;
+  }
+  return t;
+}
+
+function render(){
+  document.getElementById("total").innerText = total();
+
+  let html="";
+  for(let i of cart){
+    html += `<div>${i.id} x ${i.qty}</div>`;
+  }
+
+  document.getElementById("cart").innerHTML = html;
+}
+
+async function checkout(){
+
+  const res = await fetch("/api/create-order",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      items:cart,
+      name:document.getElementById("name").value,
+      email:document.getElementById("email").value,
+      phone:document.getElementById("phone").value,
+      address:document.getElementById("address").value
     })
   });
 
   const data = await res.json();
-  console.log(data);
 
-  if (data.payment_url) {
+  if(data.payment_url){
     window.location.href = data.payment_url;
   } else {
     alert("Payment failed");
