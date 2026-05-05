@@ -1,5 +1,4 @@
 import os
-import uuid
 import requests
 from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient, ASCENDING
@@ -17,10 +16,11 @@ MERCHANT_ID = os.getenv("MERCHANT_ID")
 PAYSTATION_PASSWORD = os.getenv("PAYSTATION_PASSWORD")
 BASE_URL = os.getenv("BASE_URL")
 
-PAY_INIT_URL = "https://sandbox.paystation.com.bd/initiate-payment"
+PAY_INIT_URL = "hhttps://sandbox.paystation.com.bd/initiate-payment"
 PAY_STATUS_URL = "https://sandbox.paystation.com.bd/transaction-status"
 
 app = Flask(__name__, template_folder="../templates")
+
 limiter = Limiter(get_remote_address, app=app)
 
 # =========================
@@ -33,12 +33,12 @@ orders = db["orders"]
 orders.create_index([("invoice", ASCENDING)], unique=True)
 
 # =========================
-# FIXED PRODUCTS (TRUTH SOURCE)
+# FIXED PRODUCTS
 # =========================
 PRODUCTS = {
-    "p1": {"name": "Product 1", "price": 5},
-    "p2": {"name": "Product 2", "price": 7},
-    "p3": {"name": "Product 3", "price": 10},
+    "p1": {"price": 5},
+    "p2": {"price": 7},
+    "p3": {"price": 10},
 }
 
 # =========================
@@ -63,7 +63,7 @@ def calculate_total(items):
 
 
 # =========================
-# PAYMENT VERIFICATION (TRUTH SOURCE)
+# VERIFY PAYMENT (TRUTH SOURCE)
 # =========================
 def verify_payment(invoice):
     order = orders.find_one({"invoice": invoice})
@@ -71,7 +71,7 @@ def verify_payment(invoice):
         return
 
     # prevent double processing
-    if order.get("verified"):
+    if order.get("verified") is True:
         return
 
     try:
@@ -90,21 +90,24 @@ def verify_payment(invoice):
         return
 
     data = res.get("data", {})
-    status = data.get("trx_status")
+    trx_status = data.get("trx_status")
 
-    update = {
-        "verified": True,
-        "trx_id": data.get("trx_id")
+    update_data = {
+        "trx_id": data.get("trx_id"),
+        "verified": True
     }
 
-    if status == "success":
-        update["status"] = "paid"
-    elif status in ["failed", "refund"]:
-        update["status"] = "failed"
+    if trx_status == "success":
+        update_data["status"] = "paid"
+    elif trx_status in ["failed", "refund"]:
+        update_data["status"] = "failed"
     else:
-        update["status"] = "processing"
+        update_data["status"] = "processing"
 
-    orders.update_one({"invoice": invoice}, {"$set": update})
+    orders.update_one(
+        {"invoice": invoice},
+        {"$set": update_data}
+    )
 
 
 # =========================
@@ -123,20 +126,22 @@ def home():
 def create_order():
     data = request.get_json()
 
-    if not isinstance(data.get("items"), list):
+    items = data.get("items", [])
+
+    if not isinstance(items, list):
         return jsonify({"error": "Invalid items"}), 400
 
     try:
-        total = calculate_total(data["items"])
-    except:
-        return jsonify({"error": "Invalid cart"}), 400
+        amount = calculate_total(items)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
-    invoice = str(uuid.uuid4())
+    invoice = os.urandom(16).hex()
 
     orders.insert_one({
         "invoice": invoice,
-        "items": data["items"],
-        "amount": total,
+        "items": items,
+        "amount": amount,
         "status": "initiated",
         "verified": False,
         "customer": {
@@ -151,7 +156,7 @@ def create_order():
         "password": PAYSTATION_PASSWORD,
         "invoice_number": invoice,
         "currency": "BDT",
-        "payment_amount": total,
+        "payment_amount": amount,
         "cust_name": data.get("name"),
         "cust_phone": data.get("phone"),
         "cust_email": data.get("email"),
@@ -167,7 +172,7 @@ def create_order():
 
 
 # =========================
-# CALLBACK (UNTRUSTED TRIGGER ONLY)
+# CALLBACK (UNTRUSTED ENTRY POINT)
 # =========================
 @app.route("/api/payment-callback")
 def payment_callback():
@@ -176,10 +181,19 @@ def payment_callback():
     if not invoice:
         return "invalid", 400
 
-    # NEVER TRUST CALLBACK
+    order = orders.find_one({"invoice": invoice})
+    if not order:
+        return "not found", 404
+
+    # mark as verifying (safe intermediate state)
+    orders.update_one(
+        {"invoice": invoice},
+        {"$set": {"status": "verifying"}}
+    )
+
+    # ALWAYS VERIFY FROM PAYSTATION
     verify_payment(invoice)
 
     return "OK"
-
 
  
