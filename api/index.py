@@ -181,7 +181,7 @@ def callback():
     # Verify independently with PayStation
     verified_status = verify_with_paystation(invoice)
 
-    if verified_status == "success":
+    if verified_status in ("success", "successful"):
         orders.update_one({"invoice": invoice}, {"$set": {"status": "success", "verified": True}})
         return redirect(f"/success?invoice_number={invoice}&status=Success")
     else:
