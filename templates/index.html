@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PayShop — Premium Essentials</title>
+  <title>SafeFood — Safe Food Delivered</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -899,7 +899,7 @@
   <nav>
     <a href="#" class="nav-brand">
       <i class="fas fa-leaf"></i>
-      PayShop
+      SafeFood
     </a>
     <ul class="nav-links">
       <li><a href="#products">Our Products</a></li>
@@ -961,8 +961,8 @@
   <section class="hero">
     <div class="hero-content">
       <div class="hero-text">
-        <h1>Premium Quality,<br>Delivered Fresh</h1>
-        <p>Thoughtfully sourced essentials for your family. Ethically produced, expertly handled, and delivered with care.</p>
+        <h1>Safe Food,<br>Delivered Fresh</h1>
+        <p>100% safe, lab-tested food for your family. Sourced responsibly, handled with care, delivered fresh to your door.</p>
         <div class="hero-badges">
           <span class="hero-badge"><i class="fas fa-shield-alt"></i> SSL Secured</span>
           <span class="hero-badge"><i class="fas fa-truck"></i> Fast Delivery</span>
@@ -971,7 +971,7 @@
       </div>
       <div class="hero-visual">
         <div class="hero-image-placeholder">
-          🛍️
+          🥬
         </div>
         <div class="price-tag">Best<br>Prices</div>
       </div>
@@ -983,23 +983,23 @@
     <div class="trust-grid">
       <div class="trust-item">
         <div class="trust-icon"><i class="fas fa-snowflake"></i></div>
-        <h3>Fresh Storage</h3>
-        <p>Locks in taste & protects from spoilage</p>
+        <h3>Blast Freezing</h3>
+        <p>Locks in taste & protects from bacterial attack</p>
       </div>
       <div class="trust-item">
         <div class="trust-icon"><i class="fas fa-shield-virus"></i></div>
-        <h3>100% Quality Checked</h3>
-        <p>Every item verified before dispatch</p>
+        <h3>100% Antibiotic-Free</h3>
+        <p>Raised without antibiotics</p>
       </div>
       <div class="trust-item">
         <div class="trust-icon"><i class="fas fa-hand-holding-heart"></i></div>
-        <h3>Ethically Sourced</h3>
-        <p>Supporting local communities</p>
+        <h3>Halal Slaughter</h3>
+        <p>Ensuring complete halal slaughter</p>
       </div>
       <div class="trust-item">
         <div class="trust-icon"><i class="fas fa-box-open"></i></div>
-        <h3>Secure Packaging</h3>
-        <p>Keeps items safe during transit</p>
+        <h3>Vacuum Pack</h3>
+        <p>Keeps fresh for longer</p>
       </div>
     </div>
   </section>
@@ -1010,21 +1010,21 @@
     <!-- PRODUCTS -->
     <section id="products">
       <div class="section-header">
-        <div class="section-label">Curated Selection</div>
-        <h2 class="section-title">Our Premium Products</h2>
-        <p class="section-subtitle">Thoughtfully selected, expertly handled — delivered fresh to your doorstep.</p>
+        <div class="section-label">Lab Tested</div>
+        <h2 class="section-title">Our Safe Selection</h2>
+        <p class="section-subtitle">Thoughtfully raised, expertly cut — antibiotic-free food delivered fresh.</p>
       </div>
 
       <div class="products">
         {% for pid, p in products.items() %}
         <div class="product-card">
           <div class="product-image">
-            <span class="product-badge">Premium</span>
+            <span class="product-badge">Safe</span>
             {{ p.emoji }}
           </div>
           <div class="product-info">
             <h3 class="product-name">{{ p.name }}</h3>
-            <p class="product-desc">Farm-fresh quality, perfect for your daily needs.</p>
+            <p class="product-desc">Farm-fresh quality, perfect for roasts & curries.</p>
             <div class="product-footer">
               <span class="product-price">৳{{ p.price }}</span>
               <div class="qty-stepper">
@@ -1051,7 +1051,7 @@
         </div>
         <div class="testimonial-grid">
           <div class="testimonial-card">
-            <p class="testimonial-text">"The quality is exceptional! My family loves the freshness and I love that it's ethically sourced."</p>
+            <p class="testimonial-text">"The quality is exceptional! My family loves the taste and I love that it's antibiotic-free."</p>
             <div class="testimonial-author">
               <div class="author-avatar">SR</div>
               <div class="author-info">
@@ -1061,7 +1061,7 @@
             </div>
           </div>
           <div class="testimonial-card">
-            <p class="testimonial-text">"Fresh delivery every time. The payment process is so convenient and hassle-free!"</p>
+            <p class="testimonial-text">"Fresh delivery every time. The bKash payment process is so convenient!"</p>
             <div class="testimonial-author">
               <div class="author-avatar">AK</div>
               <div class="author-info">
@@ -1071,7 +1071,7 @@
             </div>
           </div>
           <div class="testimonial-card">
-            <p class="testimonial-text">"Finally found a reliable supplier. Worth every taka! Highly recommended."</p>
+            <p class="testimonial-text">"Finally found a reliable supplier. Worth every taka!"</p>
             <div class="testimonial-author">
               <div class="author-avatar">NT</div>
               <div class="author-info">
@@ -1093,20 +1093,20 @@
       <div class="faq-list">
         <div class="faq-item">
           <button class="faq-question" onclick="toggleFaq(this)">
-            What does "premium quality" really mean?
+            What does "antibiotic-free" really mean?
             <i class="fas fa-chevron-down"></i>
           </button>
           <div class="faq-answer">
-            <p>Every product undergoes rigorous quality checks before dispatch. We partner with trusted suppliers to ensure you receive only the best.</p>
+            <p>Our products are raised without the use of antibiotics, ensuring natural growth and healthier food for your family.</p>
           </div>
         </div>
         <div class="faq-item">
           <button class="faq-question" onclick="toggleFaq(this)">
-            How are items delivered and stored?
+            How is the food delivered and stored?
             <i class="fas fa-chevron-down"></i>
           </button>
           <div class="faq-answer">
-            <p>Items are stored in temperature-controlled facilities and delivered in insulated packaging to maintain freshness.</p>
+            <p>Products are blast-frozen immediately and delivered in temperature-controlled packaging to maintain freshness and safety.</p>
           </div>
         </div>
         <div class="faq-item">
@@ -1115,12 +1115,12 @@
             <i class="fas fa-chevron-down"></i>
           </button>
           <div class="faq-answer">
-            <p>Yes, we deliver to all major cities and districts across Bangladesh. Delivery times may vary by location.</p>
+            <p>Yes, we deliver nationwide across Bangladesh. Delivery times may vary by location.</p>
           </div>
         </div>
         <div class="faq-item">
           <button class="faq-question" onclick="toggleFaq(this)">
-            How do I pay with bKash or other methods?
+            How do I pay with bKash?
             <i class="fas fa-chevron-down"></i>
           </button>
           <div class="faq-answer">
@@ -1138,9 +1138,9 @@
       <div>
         <div class="footer-brand">
           <i class="fas fa-leaf"></i>
-          PayShop
+          SafeFood
         </div>
-        <p class="footer-desc">Premium essentials, ethically sourced and delivered fresh across Dhaka and beyond.</p>
+        <p class="footer-desc">Safe essentials, ethically sourced and delivered fresh across Dhaka and beyond.</p>
       </div>
       <div class="footer-col">
         <h4>Explore</h4>
@@ -1155,11 +1155,11 @@
         <h4>Contact</h4>
         <p><i class="fas fa-map-marker-alt"></i> Dhaka, Bangladesh</p>
         <p><i class="fas fa-phone"></i> 01794449607</p>
-        <p><i class="fas fa-envelope"></i> hello@payshop.com</p>
+        <p><i class="fas fa-envelope"></i> hello@safefood.com</p>
       </div>
     </div>
     <div class="footer-bottom">
-      © 2026 PayShop — Purity, Naturally.
+      © 2026 SafeFood — Purity, Naturally.
     </div>
   </footer>
 
