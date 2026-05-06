@@ -31,12 +31,12 @@ orders = db["orders"]
 # PRODUCTS (server-side truth)
 # =========================
 PRODUCTS = {
-    "p1": {"name": "Wireless Earbuds",  "price": 1200, "emoji": "🎧"},
-    "p2": {"name": "Phone Case",        "price": 350,  "emoji": "📱"},
-    "p3": {"name": "USB-C Cable",       "price": 180,  "emoji": "🔌"},
-    "p4": {"name": "Power Bank 10000mAh","price": 950, "emoji": "🔋"},
-    "p5": {"name": "Screen Protector",  "price": 120,  "emoji": "🛡️"},
-    "p6": {"name": "Smart Watch Strap", "price": 280,  "emoji": "⌚"},
+    "p1": {"name": "Wireless Earbuds",  "price": 5, "emoji": "🎧"},
+    "p2": {"name": "Phone Case",        "price": 3,  "emoji": "📱"},
+    "p3": {"name": "USB-C Cable",       "price": 18,  "emoji": "🔌"},
+    "p4": {"name": "Power Bank 10000mAh","price": 9, "emoji": "🔋"},
+    "p5": {"name": "Screen Protector",  "price": 12,  "emoji": "🛡️"},
+    "p6": {"name": "Smart Watch Strap", "price": 28,  "emoji": "⌚"},
 }
 
 # =========================
